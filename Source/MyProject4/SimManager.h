@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "SimMananged.h"
+#include "SimManaged.h"
 #include "SimManager.generated.h"
 
 
@@ -21,7 +21,7 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-	TSet<TSoftObjectPtr<USimMananged>> managed; //oops, I've mispelled class
+	TSet<TSoftObjectPtr<USimManaged>> managed;
 
 	void executeSimTick(FTimespan simStep);
 
@@ -31,7 +31,7 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	bool Subscribe(TSoftObjectPtr<USimMananged> toManage);
+	bool Subscribe(TSoftObjectPtr<USimManaged> ToManage);
 
 	UFUNCTION(BlueprintCallable, Category = "SimManager")
 	bool StartSim();
@@ -39,5 +39,5 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SimManager")
 	bool StopSim();
 
-	void executorFinishedSimTick(TSoftObjectPtr<USimMananged> sender);
+	void ExecutorFinishedSimTick(TSoftObjectPtr<USimManaged> Sender);
 };

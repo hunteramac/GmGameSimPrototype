@@ -27,17 +27,35 @@ void USimManager::executeSimTick(FTimespan simStep)
 	// setup some way to know that all sim managed complete their execution in the next step.
 	// we may want to stagger handling in some case (combat), rather then having it all run asyncronously
 
-	for (auto specific: managed)
-	{
-		// Call sim managed 'execute sim step with time step.
-		specific->ExecuteSimTick(simStep);
-		// wait for it to finish before continuing onto the next sim managed?
-	}
+	//this should actually be handled in ExecutorFinishedSimTick
+
+	// just execute the first one in the list
+	auto specific = managed.begin()->Get();
+	specific->ExecuteSimTick(simStep);
+
+	//now we wait for managed to call back in ExecutorFinishedSimTick
+
+	// 
+	//for (auto specific: managed)
+	//{
+	//	// Call sim managed 'execute sim step with time step.
+	//	specific->ExecuteSimTick(simStep);
+	//	// wait for it to finish before continuing onto the next sim managed?
+	//}
 
 	// wait for callbacks
 
 	// on getting callbacks, execute next sim tick (unless sim has been commanded to stop)
 }
+
+void USimManager::ExecutorFinishedSimTick(TSoftObjectPtr<USimManaged> Sender)
+{
+	//Is this the last managed in our dataStructure? Are we done executing all?
+		// then start a new simTick
+
+	// if not, we need to continue calling next element
+}
+
 
 
 // Called every frame
@@ -48,9 +66,10 @@ void USimManager::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 	// ...
 }
 
-bool USimManager::Subscribe(TSoftObjectPtr<USimMananged> toManage)
+bool USimManager::Subscribe(TSoftObjectPtr<USimManaged> ToManage)
 {
-	managed.Add(toManage);
+	// post prototyping we should be concerned about newly created simMananged subscribing during a sim step.
+	managed.Add(ToManage);
 	return true; // could have some error handling here if we need it
 }
 
@@ -59,13 +78,8 @@ bool USimManager::StartSim()
 	auto count = managed.Num();
 	executingSim = true;
 	FTimespan MyTimespan(0, 0, 0, 1);
-	
-	// this is almost certainly a bad way to define repeat exec. probably will be 
-	// caught by infinite loop detection.
-	// This should actually be an event/async.
-	//while(executingSim)
 
-	//just do once cylce for now.
+	// this starts a chain of calls. post prototyping we should be concerened about the chain being interrupted somehow, detecting it, and handling it.
 	executeSimTick(MyTimespan);
 	return true;
 }
@@ -74,11 +88,4 @@ bool USimManager::StopSim()
 {
 	executingSim = false;
 	return true;
-}
-
-void USimManager::executorFinishedSimTick(TSoftObjectPtr<USimMananged> sender)
-{
-	// we'll need to keep track of these, maintaining some outgoing commands 'set' and removing them as 
-	// responses like this one come in matching the reference.
-	// Once it's empty, we should trigger another sim step.
 }

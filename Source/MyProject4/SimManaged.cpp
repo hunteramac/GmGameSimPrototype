@@ -1,13 +1,13 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "SimMananged.h"
+#include "SimManaged.h"
 #include "Kismet/GameplayStatics.h"
 #include "SimPawn.h"
 #include "SimManager.h"
 
 // Sets default values for this component's properties
-USimMananged::USimMananged()
+USimManaged::USimManaged()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -18,7 +18,7 @@ USimMananged::USimMananged()
 
 
 // Called when the game starts
-void USimMananged::BeginPlay()
+void USimManaged::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -43,25 +43,25 @@ void USimMananged::BeginPlay()
 
 
 // Called every frame
-void USimMananged::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void USimManaged::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	// ...
 }
 
-bool USimMananged::ExecuteSimTick(FTimespan simStep)
+bool USimManaged::ExecuteSimTick(FTimespan SimStep)
 {
 	auto ParentActor = this->GetOwner();
 	
 	//I'll need one for regular actors, probably. For now this is fine.
 	if (auto simManagedPawn = Cast<ASimPawn>(ParentActor); simManagedPawn)
-		simManagedPawn->ExecuteSimTick(simStep);
+		simManagedPawn->ExecuteSimTick(SimStep);
 
 	return false;
 }
 
-void USimMananged::SimTickCompleted()
+void USimManaged::SimTickCompleted()
 {
 	//I should be storing this once. But I'm just testing things right now.
 	auto playerController = UGameplayStatics::GetPlayerController(GetWorld(), 0); // 0 for the first local player
@@ -70,7 +70,7 @@ void USimMananged::SimTickCompleted()
 		auto simManager = playerController->GetComponentByClass<USimManager>();
 		if (simManager)
 		{
-			simManager->executorFinishedSimTick(this);
+			simManager->ExecutorFinishedSimTick(this);
 		}
 	}
 }
