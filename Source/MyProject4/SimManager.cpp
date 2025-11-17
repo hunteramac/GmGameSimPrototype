@@ -22,41 +22,41 @@ void USimManager::BeginPlay()
 	// ...
 }
 
-void USimManager::executeSimTick(FTimespan simStep)
+void USimManager::ExecuteSimTick()//FTimespan simStep)
 {
-	// setup some way to know that all sim managed complete their execution in the next step.
-	// we may want to stagger handling in some case (combat), rather then having it all run asyncronously
-
-	//this should actually be handled in ExecutorFinishedSimTick
+	//
+	toExecuteSimStepsOn = managed;
+	//curSimStep = simStep; // In future we probably want to support adjusting sim step rate dynamically. So we do want this to update. 
 
 	// just execute the first one in the list
-	auto specific = managed.begin()->Get();
-	specific->ExecuteSimTick(simStep);
+	toExecuteSimStepsOn.begin()->Get()->ExecuteSimTick(curSimStep);
 
 	//now we wait for managed to call back in ExecutorFinishedSimTick
-
-	// 
-	//for (auto specific: managed)
-	//{
-	//	// Call sim managed 'execute sim step with time step.
-	//	specific->ExecuteSimTick(simStep);
-	//	// wait for it to finish before continuing onto the next sim managed?
-	//}
-
-	// wait for callbacks
-
-	// on getting callbacks, execute next sim tick (unless sim has been commanded to stop)
 }
 
 void USimManager::ExecutorFinishedSimTick(TSoftObjectPtr<USimManaged> Sender)
 {
+	toExecuteSimStepsOn.Remove(Sender);
 	//Is this the last managed in our dataStructure? Are we done executing all?
 		// then start a new simTick
-
-	// if not, we need to continue calling next element
+	if (!toExecuteSimStepsOn.IsEmpty())
+		toExecuteSimStepsOn.begin()->Get()->ExecuteSimTick(curSimStep);
+	else if (executingSim)
+	{
+		// We have to limit the speed very slightly, to avoid triggering infinite loop detection
+		// for any blueprint logic using simTick
+		++limiterExecCount;
+		if (limiterExecCount > LoopLimiterCount)//2147483647 - 100000)
+		{
+			limiterExecCount = 0;
+			FTimerManager& TimerManager = GetWorld()->GetTimerManager();
+			TimerManager.SetTimer(DelayTimerHandle, this, &USimManager::ExecuteSimTick, 0.000001f, false);
+			return;
+		}
+		ExecuteSimTick();//(curSimStep); //if not, we need to continue calling next element
+	}
+		
 }
-
-
 
 // Called every frame
 void USimManager::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -68,7 +68,7 @@ void USimManager::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 
 bool USimManager::Subscribe(TSoftObjectPtr<USimManaged> ToManage)
 {
-	// post prototyping we should be concerned about newly created simMananged subscribing during a sim step.
+	// post prototyping we should be concerned about newly created simManaged subscribing during a sim step.
 	managed.Add(ToManage);
 	return true; // could have some error handling here if we need it
 }
@@ -77,10 +77,11 @@ bool USimManager::StartSim()
 {
 	auto count = managed.Num();
 	executingSim = true;
-	FTimespan MyTimespan(0, 0, 0, 1);
 
-	// this starts a chain of calls. post prototyping we should be concerened about the chain being interrupted somehow, detecting it, and handling it.
-	executeSimTick(MyTimespan);
+	curSimStep = FTimespan(DefaultSimStepRate * 10000);
+
+	// this starts a chain of calls. post prototyping we should be concerned about the chain being interrupted somehow, detecting it, and handling it.
+	ExecuteSimTick();//(MyTimespan);
 	return true;
 }
 

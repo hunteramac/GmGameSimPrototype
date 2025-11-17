@@ -17,13 +17,27 @@ public:
 	// Sets default values for this component's properties
 	USimManager();
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SimManager")
+	float LoopLimiterCount;
+
+	/* in milliseconds*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SimManager")
+	float DefaultSimStepRate;
+
+private:
+	FTimerHandle DelayTimerHandle;
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
 	TSet<TSoftObjectPtr<USimManaged>> managed;
 
-	void executeSimTick(FTimespan simStep);
+	TSet<TSoftObjectPtr<USimManaged>> toExecuteSimStepsOn;
+	FTimespan curSimStep;
+	double limiterExecCount;
+
+	void ExecuteSimTick();//(FTimespan simStep);
 
 	bool executingSim;
 
