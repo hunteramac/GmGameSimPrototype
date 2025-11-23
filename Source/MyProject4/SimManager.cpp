@@ -29,7 +29,8 @@ void USimManager::ExecuteSimTick()//FTimespan simStep)
 	//curSimStep = simStep; // In future we probably want to support adjusting sim step rate dynamically. So we do want this to update. 
 
 	// just execute the first one in the list
-	toExecuteSimStepsOn.begin()->Get()->ExecuteSimTick(curSimStep);
+	if(!toExecuteSimStepsOn.IsEmpty())
+		toExecuteSimStepsOn.begin()->Get()->ExecuteSimTick(curSimStep);
 
 	//now we wait for managed to call back in ExecutorFinishedSimTick
 }
